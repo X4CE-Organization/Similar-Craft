@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>西密乐方块世界 · Similar Craft</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="bootlog" hidden></div>
+<canvas id="game"></canvas>
+
+<!-- ============ 加载 / 主菜单 ============ -->
+<div id="menu" class="overlay">
+  <div class="menu-bg"></div>
+  <div class="menu-inner">
+    <h1 class="logo">西密乐<span>方块世界</span></h1>
+    <p class="sub">Similar Craft · 程序化无限世界 · 生存 · 合成 · 红石 · 怪物 · 附魔</p>
+    <p class="maker">制作人：武士芝士</p>
+    <div class="menu-row">
+      <label>世界种子 <input id="seedInput" type="text" placeholder="留空随机" /></label>
+      <button id="btnNew" class="wide primary">创建新世界</button>
+      <button id="btnLoad" class="wide">继续上次存档</button>
+      <button id="btnRestore" class="wide hidden">恢复备份存档</button>
+    </div>
+    <div class="menu-row">
+      <label>模式
+        <select id="modeSelect">
+          <option value="survival">生存（推荐）</option>
+          <option value="creative">创造（无限方块 / 飞行）</option>
+        </select>
+      </label>
+      <label>难度
+        <select id="diffSelect">
+          <option value="0">和平（无怪物）</option>
+          <option value="1" selected>普通</option>
+          <option value="2">困难</option>
+        </select>
+      </label>
+    </div>
+    <div class="menu-row small">
+      <button id="btnHelp">操作说明</button>
+      <button id="btnAch">成就列表</button>
+      <button id="btnSet">设置</button>
+    </div>
+    <div id="saveInfo" class="save-info"></div>
+    <div class="tips" id="menuTips"></div>
+    <div class="maker">制作人：武士芝士</div>
+  </div>
+</div>
+
+<!-- ============ 加载进度 ============ -->
+<div id="loading" class="overlay hidden">
+  <div class="load-box">
+    <h2>正在生成世界…</h2>
+    <div class="bar"><i id="loadBar"></i></div>
+    <div id="loadText">准备中</div>
+    <div class="tips">提示：砍树 → 合成工作台 → 合成木镐 → 挖石头 → 升级工具 → 找铁矿 → 熔炼铁锭</div>
+  </div>
+</div>
+
+<!-- ============ HUD ============ -->
+<div id="hud" class="hidden">
+  <div id="bossBar" class="hidden">
+    <div class="boss-head"><b id="bossName">末影龙</b></div>
+    <div class="boss-track"><i id="bossFill"></i></div>
+  </div>
+  <div id="dimLabel"></div>
+  <div id="crosshair"><i></i><i></i></div>
+  <div id="breakRing"><svg viewBox="0 0 36 36"><circle id="breakArc" cx="18" cy="18" r="16"></circle></svg></div>
+  <div id="itemName"></div>
+
+  <div id="hudTopLeft">
+    <div id="minimap"><canvas id="miniCv" width="160" height="160"></canvas><div id="miniDir">N</div></div>
+  </div>
+
+  <div id="hudTopRight">
+    <div id="debug" class="hidden"></div>
+    <div id="questPanel"></div>
+  </div>
+
+  <div id="toasts"></div>
+  <div id="achievementBar" class="hidden">
+    <canvas id="achIcon" width="32" height="32"></canvas>
+    <div><b id="achTitle"></b><span id="achDesc"></span></div>
+  </div>
+
+  <div id="bottomHud">
+    <div id="statRow">
+      <div id="armorBar" class="bar-icons"></div>
+      <div id="healthBar" class="bar-icons"></div>
+    </div>
+    <div id="statRow2">
+      <div id="airBar" class="bar-icons"></div>
+      <div id="hungerBar" class="bar-icons"></div>
+    </div>
+    <div id="xpBar"><i id="xpFill"></i><span id="xpLevel"></span></div>
+    <div id="hotbar"></div>
+  </div>
+
+  <div id="chatWrap">
+    <div id="chatLog"></div>
+    <input id="chatInput" class="hidden" type="text" maxlength="120" placeholder="输入消息或指令，例如 /time set day" />
+  </div>
+</div>
+
+<!-- ============ 容器界面（背包 / 工作台 / 熔炉 / 箱子 / 附魔） ============ -->
+<div id="screenWrap" class="overlay hidden">
+  <div class="screen" id="screen">
+    <div class="screen-head"><b id="screenTitle">背包</b><span class="hint" id="screenHint"></span></div>
+    <div class="screen-body" id="screenBody"></div>
+  </div>
+  <div id="cursorItem" class="hidden"><canvas></canvas><span></span></div>
+</div>
+
+<!-- ============ 暂停菜单 ============ -->
+<div id="pause" class="overlay hidden">
+  <div class="menu-inner">
+    <h2>游戏已暂停</h2>
+    <p class="sub">西密乐方块世界 · Similar Craft &nbsp;|&nbsp; 制作人：武士芝士</p>
+    <div class="menu-row">
+      <button id="btnResume" class="wide primary">返回游戏</button>
+      <button id="btnSettings" class="wide">设置</button>
+      <button id="btnSave" class="wide">保存世界</button>
+      <button id="btnQuit" class="wide danger">保存并退出到主菜单</button>
+    </div>
+    <div class="tips" id="pauseInfo"></div>
+  </div>
+</div>
+
+<!-- ============ 设置 ============ -->
+<div id="settings" class="overlay hidden">
+  <div class="menu-inner">
+    <h2>设置</h2>
+    <div class="settings-grid" id="settingsGrid"></div>
+    <div class="menu-row"><button id="btnSetBack" class="wide primary">完成</button></div>
+  </div>
+</div>
+
+<!-- ============ 操作说明 ============ -->
+<div id="help" class="overlay hidden">
+  <div class="menu-inner">
+    <h2>操作说明</h2>
+    <div class="help-grid">
+      <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移动</div>
+      <div><kbd>空格</kbd> 跳跃 / 游泳上浮 / 飞行上升</div>
+      <div><kbd>Shift</kbd> 潜行（不会掉下边缘）</div>
+      <div><kbd>Ctrl</kbd> 或双击<kbd>W</kbd> 疾跑</div>
+      <div><kbd>鼠标左键</kbd> 挖掘 / 攻击</div>
+      <div><kbd>鼠标右键</kbd> 放置方块 / 使用方块 / <b>按住</b>吃东西（饿了才会吃）</div>
+      <div><kbd>鼠标滚轮</kbd> 或 <kbd>1</kbd>-<kbd>9</kbd> 切换物品</div>
+      <div><kbd>鼠标中键</kbd> 复制方块到手上（创造）</div>
+      <div><kbd>E</kbd> 背包（2×2 合成）</div>
+      <div><kbd>Q</kbd> 丢弃一个物品</div>
+      <div><kbd>T</kbd> / <kbd>/</kbd> 聊天 / 指令</div>
+      <div><kbd>F5</kbd> 切换视角（第一 / 第三人称）</div>
+      <div><kbd>F3</kbd> 调试信息</div>
+      <div><kbd>F</kbd> 切换飞行（创造模式）</div>
+      <div><kbd>M</kbd> 小地图开关 · <kbd>J</kbd> 收起/显示新手目标 · <kbd>P</kbd> 截图</div>
+      <div><kbd>Esc</kbd> 暂停</div>
+    </div>
+    <div class="help-cols">
+      <div>
+        <h3>生存要点</h3>
+        <ul>
+          <li>徒手打树叶/木头，先做工作台与木镐</li>
+          <li>挖石头升级石镐，再找铁矿熔炼铁锭</li>
+          <li>天黑会刷僵尸/骷髅/苦力怕，插火把或搭房子</li>
+          <li><b>吃东西</b>：把面包/熟肉拿在手上，<b>按住鼠标右键 1.3 秒</b>进食（饱食度满了不会吃，屏幕下方会有进度条）</li>
+          <li>饱食度 &gt; 17 才会自动回血，掉饥饿了才吃得上东西</li>
+          <li>床可以跳过夜晚</li>
+        </ul>
+      </div>
+      <div>
+        <h3>进阶玩法</h3>
+        <ul>
+          <li>红石：拉杆/按钮/压力板 → 红石粉 → 红石灯、活塞、TNT</li>
+          <li>农业：锄头开垦 → 种子 → 小麦 → 面包</li>
+          <li>附魔台消耗经验升级工具（效率/时运/锋利/保护）</li>
+          <li>弓 + 箭远程作战，皮革做盔甲</li>
+          <li>指令：/time /weather /give /tp /summon /gamemode</li>
+        </ul>
+      </div>
+    </div>
+    <div class="menu-row"><button id="btnHelpBack" class="wide primary">关闭</button></div>
+  </div>
+</div>
+
+<!-- ============ 成就 ============ -->
+<div id="ach" class="overlay hidden">
+  <div class="menu-inner">
+    <h2>成就 <span id="achCount"></span></h2>
+    <div class="ach-list" id="achList"></div>
+    <div class="menu-row"><button id="btnAchBack" class="wide primary">关闭</button></div>
+  </div>
+</div>
+
+<!-- ============ 死亡 ============ -->
+<div id="death" class="overlay hidden death-overlay">
+  <div class="menu-inner">
+    <h2 class="death-title">你死了！</h2>
+    <p id="deathMsg" class="sub"></p>
+    <div class="menu-row"><button id="btnRespawn" class="wide primary">重生</button></div>
+  </div>
+</div>
+
+<!-- ============ 传送 / 结局 ============ -->
+<div id="portalOverlay" class="hidden">
+  <div class="portal-inner">
+    <h2 id="portalTitle">正在传送…</h2>
+    <div class="bar"><i id="portalBar"></i></div>
+    <div class="tips" id="portalTip">站在传送门中</div>
+  </div>
+</div>
+<div id="credits" class="overlay hidden">
+  <div class="menu-inner credits-inner">
+    <h2 class="credits-title">★ 通关 ★</h2>
+    <p class="sub">西密乐方块世界 · Similar Craft &nbsp;|&nbsp; 制作人：武士芝士</p>
+    <p class="sub">你击败了末影龙，方块世界的尽头已被征服。</p>
+    <div class="credits-text">
+      <p>你从一棵树开始，做出工作台、石镐、铁镐与钻石装备；</p>
+      <p>你点燃了下界传送门，穿过岩浆海与烈焰人的火球；</p>
+      <p>你在黑曜石柱之间奔跑，击碎了治疗末影龙的水晶；</p>
+      <p>最后，你在末地的紫黑色天空下结束了这场龙之战。</p>
+      <p class="dim">接下来：去探索外围空岛、搭一座属于自己的城，或者再来一次生存。</p>
+    </div>
+    <div class="menu-row">
+      <button id="btnCreditsClose" class="wide primary">继续游戏</button>
+    </div>
+  </div>
+</div>
+
+<script src="lib/three.min.js?v=20260913k"></script>
+<script src="js/util.js?v=20260913k"></script>
+<script src="js/audio.js?v=20260913k"></script>
+<script src="js/textures.js?v=20260913k"></script>
+<script src="js/blocks.js?v=20260913k"></script>
+<script src="js/fluids.js?v=20260913k"></script>
+<script src="js/noise.js?v=20260913k"></script>
+<script src="js/worldgen.js?v=20260913k"></script>
+<script src="js/light.js?v=20260913k"></script>
+<script src="js/mesher.js?v=20260913k"></script>
+<script src="js/world.js?v=20260913k"></script>
+<script src="js/redstone.js?v=20260913k"></script>
+<script src="js/entities.js?v=20260913k"></script>
+<script src="js/inventory.js?v=20260913k"></script>
+<script src="js/player.js?v=20260913k"></script>
+<script src="js/ui.js?v=20260913k"></script>
+<script src="js/selftest.js?v=20260913k"></script>
+<script src="js/main.js?v=20260913k"></script>
+</body>
+</html>
