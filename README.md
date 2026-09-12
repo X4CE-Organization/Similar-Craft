@@ -239,7 +239,7 @@ js/main.js            主循环、维度切换与传送、天空昼夜天气、�
 - **主开发目录就是桌面上的这个文件夹**（`~/Desktop/Similar Craft`），改代码、跑自检都直接在这里做。
 - 打包：在同级目录生成 `~/Desktop/Similar Craft.zip`。用 `git archive --format=zip --prefix="Similar Craft/" -o "../Similar Craft.zip" HEAD`（只打包 git 跟踪的文件，不会把 `.git` 和 `.DS_Store` 装进去），解压后顶层就是 `Similar Craft/`。
 - 远程仓库：<https://github.com/X4CE-Organization/Similar-Craft>，分支 **main**；每次改完都要 commit 并 push。
-- 双击 `推送更新.command` 可以一键提交并推送（也可以直接 `git add -A && git commit -m "..." && git push origin main`）。
+- 推送：改完直接 `git add -A && git commit -m "..." && git push origin main`，远程 main 分支就是最新版。
 - 自检命令：`index.html?autostart=1&selftest=1`（83 项）与 `index.html?autostart=1&soak=60`（压力测试）。
 
 ## 已知取舍
